@@ -1,0 +1,285 @@
+PROJECT MEETING SUMMARY: BAYESIAN NETWORK FOR CARDIOVASCULAR DISEASE
+November 17th Meeting
+
+OVERVIEW
+The team presented significant progress on their Bayesian network project, including dataset selection, exploratory data analysis, and critical technical decisions about network structure. The meeting focused on validating the team's approach against published research and determining methods for conditional probability table estimation.
+
+DATA AND DATASET PROGRESS
+
+Dataset Selection Completed
+- Converted original data from .data file to CSV using Python
+- Dataset cleaned and ready for analysis
+- 303 patient records with 14 selected attributes
+- Source is credible cardiovascular disease literature
+
+Selected Attributes (14 total)
+- Age, gender, smoking, alcohol intake
+- Resting blood pressure (systolic and diastolic)
+- Cholesterol, glucose levels
+- Chest pain types (typical angina, atypical angina, asymptomatic)
+- Maximum heart rate achieved, exercise-induced chest pain, ST depression
+- Target: cardiovascular disease severity (0-4 scale)
+
+Scale Explanation
+0 = no cardiovascular disease
+1 = mild disease presence
+2-3 = moderate disease
+4 = extremely severe disease
+
+CRITICAL TECHNICAL CLARIFICATION
+
+Decision Tree vs. Bayesian Network Decision
+The team confirmed they are building a Bayesian network, not a decision tree. This distinction matters significantly:
+
+Decision Trees
+- Use sequential, linear rules
+- One path leads to one outcome
+- Less suitable for complex interdependencies
+
+Bayesian Networks
+- Model probabilistic relationships
+- Multiple variables can influence outcomes
+- Variables link bidirectionally
+- Can represent complex causality
+- Better suited to medical diagnosis where multiple factors interact
+
+Why This Matters for CPTs
+One connection line in a Bayesian network does not equal one probability value. If node A (asthma) links to node C (oxygen level) and node B (pneumonia) also links to C, then the connection must account for all combinations:
+- Asthma positive, pneumonia positive
+- Asthma positive, pneumonia negative
+- Asthma negative, pneumonia positive
+- Asthma negative, pneumonia negative
+This creates a table, not a simple line probability.
+
+NETWORK STRUCTURE DEVELOPED
+
+5-Tier Hierarchical Model
+Tier 1 (Root Causes): Age, gender, lifestyle factors
+Tier 2 (Intermediate): Blood pressure, cholesterol, glucose
+Tier 3 (Clinical Factors): Symptom types, exercise tolerance
+Tier 4 (Exercise Response): Exercise-induced symptoms, ST depression
+Tier 5 (Target): Cardiovascular disease outcome
+
+Relationship Example
+Age increases with higher chance of elevated cholesterol, which increases chest pain likelihood, which raises cardiovascular disease probability.
+
+Validation Process
+- Team reviewed research papers showing similar structures
+- Confirmed connections have medical basis, not just mathematical correlation
+- Example validation: does gender actually influence resting blood pressure (medically justified)?
+
+EXPLORATORY DATA ANALYSIS COMPLETED
+
+Correlation Heatmap Analysis
+Using pandas and seaborn libraries:
+- Chest pain shows 0.41 positive correlation with disease presence
+- Generated correlation matrix showing all variable relationships
+- Identified strong correlations supporting network structure
+- Purpose: verify that hypothesized relationships exist in actual data
+
+Medical Plausibility Analysis
+Created separate document explaining:
+- Why each variable was selected
+- Medical reasoning for each connection
+- Supporting research references
+- Addressing why certain attributes matter
+
+How Correlations Support Network Design
+If correlation analysis shows strong relationship between two variables, it provides mathematical backing for including them as connected nodes in the Bayesian network. Weak correlations may indicate unnecessary connections.
+
+CONDITIONAL PROBABILITY TABLE METHODS
+
+Three CPT Estimation Approaches Identified
+
+Method 1: Maximum Likelihood Estimation
+- Available in PGMPY Python library
+- Formula: (count of specific case) / (total population)
+- Example: (people with high cholesterol AND cardiovascular disease) / (total people) = probability
+- Mathematical and straightforward
+- Automatically calculated from data
+
+Method 2: Value Binning with Ranges
+- Break continuous variables into bins
+- Age binned as: <40, 40-60, >60
+- Calculate separate probabilities for each bin
+- Create discrete lookup tables
+- Used in published research papers reviewed
+
+Method 3: Greedy Hill-Climbing Algorithm
+- Statistical learning approach to find optimal network structure
+- Uses conditional dependence measures
+- Identifies which relationships are most important
+- Multinomial distributions for probability calculation
+- More complex but potentially more accurate
+
+From Literature Example
+Paper showed probability table for oxygen level prediction:
+Age <60: 0.6 probability
+Age 60-80: 0.2 probability
+Age >80: 0.2 probability
+
+This demonstrates binning method clearly.
+
+RESEARCH PAPERS AND COMPARISONS
+
+Papers Reviewed
+1. Development and Validation of Bayesian Network Predicting Coronary Heart Disease Risk
+2. Two versions of networks from same research (initial and expert-validated versions)
+3. Papers showing both structure diagrams and probability estimation methods
+
+Key Findings
+- Papers used 13 attributes (team using 14, close match)
+- Expert-validated networks showed refinements from initial versions
+- Different network structures in different papers, but same general approach
+- All papers clearly documented probability estimation methodology
+
+Advisor Guidance on Research Integration
+- Consider adopting network structures from published papers
+- Avoid reinventing relationships already established medically
+- If team's network differs from papers, must justify with strong medical evidence
+- Alternatively, use published network with team's dataset
+
+PROBABILITY DEFENSIBILITY CONCERNS
+
+Critical Questions Raised by Advisor
+
+Concern 1: Mathematical vs. Medical Meaning
+- Can maximum likelihood estimation accurately capture medical relationships?
+- Just because math finds correlation does not mean causal relationship exists
+- Weak correlation might be included mathematically but not medically relevant
+
+Concern 2: Assumption of Relationships
+- Assuming age influences cholesterol without verified medical basis
+- Need proof that relationship is significant and directional
+- Cannot assume all correlations represent true causality
+
+Concern 3: Arbitrary Probability Assignment
+- Cannot assign probabilities based on intuition
+- Every CPT value must have documented source
+- Must explain: "This is 0.7 because [data shows] or [literature says]"
+
+Advisor's Recommendation
+- Every connection must have medical justification
+- Every probability must have mathematical or medical backing
+- Document methodology completely for publication
+
+WORK BREAKDOWN
+
+Completed (Weeks 1-2)
+- Data cleaning and CSV conversion
+- Dataset and attribute selection
+- EDA with correlation analysis
+- Network structure design
+- Medical plausibility documentation
+- Research paper review
+- CPT method identification
+
+Still Required (Week 3 onwards)
+- Select best CPT estimation method
+- Get AI-generated network for comparison with research papers
+- Document AI usage methodology
+- Implement CPT calculation programmatically
+- Finalize network structure with medical justification
+- Create final probability tables
+
+NEXT WEEK DELIVERABLES
+
+Task 1: Medical Justification Document
+- Explain every connection in the network
+- Provide medical literature support
+- Defend why each variable is included
+- Clarify inverse vs. direct relationships
+
+Task 2: CPT Estimation Method Selection
+- Compare maximum likelihood vs. other methods
+- Determine best approach for team's data
+- Understand statistical theory behind chosen method
+- Document decision reasoning
+
+Task 3: Dual-Track Implementation
+Track A: AI Comparison
+- Use AI to generate decision tree from attributes
+- Compare AI output with published research structures
+- Evaluate which approach is superior
+
+Track B: CPT Programming
+- Implement chosen estimation method programmatically
+- Calculate actual probability values
+- Create functioning CPT tables
+- Test against sample data
+
+Task 4: AI Usage Documentation
+- Explain how AI was used in network creation
+- Show validation against research papers
+- Document what was AI-generated vs. team-determined
+- Provide methodology for AI employment
+
+KEY INSIGHTS FROM DISCUSSION
+
+Network vs. Tree Understanding
+Team member stated: "A network means a single line has multiple variations of values. A decision tree means one line represents one probabilistic value."
+
+This is the fundamental distinction driving all technical decisions.
+
+Circular Networks are Acceptable
+Papers reviewed showed networks that were not strictly hierarchical (had circular paths). This validated the team's complex structure.
+
+One Line, Multiple Probabilities
+The breakthrough understanding that connections cannot have single probabilities changed approach significantly. This explains why CPT tables exist separate from connection lines.
+
+Probability Formula Discovery
+Team identified formula structure for CPT calculation and recognized it involves multiplication of probabilities, aligning with Bayesian probability theory.
+
+OUTSTANDING TECHNICAL QUESTIONS
+
+1. Should team develop custom network or adapt published structure?
+2. Which CPT estimation method provides best medical accuracy?
+3. How to balance mathematical rigor with medical plausibility?
+4. Can maximum likelihood estimation capture nuanced medical relationships?
+5. How many probability bins are necessary for continuous variables?
+
+TEAM COORDINATION
+
+GitHub Organization
+- Weekly progress tracking folders (Week 1, Week 2, etc.)
+- All research papers stored centrally
+- Methodology documents shared
+- Code implementations posted
+- Voice recordings available
+
+Communication Method
+- Calendar invites via Outlook to be sent
+- Microsoft Teams now being used
+- Physical meetings scheduled (next: Sunday, same time)
+- Email for sharing additional resources
+
+TECHNICAL STACK
+- Python 3
+- PGMPY library (Bayesian networks)
+- Pandas (data manipulation)
+- Seaborn (visualization)
+- GitHub (version control)
+
+ADVISOR'S FINAL RECOMMENDATIONS
+
+1. Focus primarily on CPT estimation methodology
+2. Ensure every probability has documented source
+3. Use published research as validation framework
+4. Consider adopting proven network structures
+5. Maintain clear documentation for eventual publication
+6. Test probability calculation programmatically before finalizing
+
+TIMELINE ASSESSMENT
+
+Progress Rate: Good
+- Two weeks of substantial groundwork completed
+- Clear pathway forward identified
+- Technical decisions made with research backing
+
+Remaining Time: 5 weeks
+- Adequate for implementation phase
+- CPT estimation is main remaining blocker
+- Once CPTs resolved, visualization and documentation will follow
+
+PUBLICATION READINESS
+Advisor interested in research publication output. Documentation approach and methodology must maintain publication-quality standards from start.
