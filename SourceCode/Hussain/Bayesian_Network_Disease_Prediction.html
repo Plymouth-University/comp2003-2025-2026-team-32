@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayesian Network - Clinical Decision Support</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="absolute top-0 left-0 w-full h-10 bg-white border-b border-gray-300 flex justify-between items-center px-4 z-50 shadow-sm">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-network-wired text-blue-600"></i>
+            <span class="font-semibold text-gray-700 text-sm">Heart Disease Bayesian Network (v3 Corrected)</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 border-r pr-3 border-gray-300">
+                <i class="fas fa-check-circle text-green-500 mr-1"></i> Validated Structure
+            </span>
+            <button onclick="bn.resetEvidence()" class="text-xs font-medium text-gray-700 hover:text-blue-600 flex items-center gap-1 bg-gray-50 border border-gray-300 px-2 py-1 rounded hover:bg-white transition-all">
+                <i class="fas fa-eraser text-red-500"></i> Clear Evidence
+            </button>
+        </div>
+    </div>
+
+    <div id="canvas"></div>
+
+    <script>
+        // Logic will go here
+    </script>
+</body>
+</html>
