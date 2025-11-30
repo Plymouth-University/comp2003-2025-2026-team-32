@@ -7,13 +7,94 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- BAYES SERVER AESTHETIC --- */
+        body { 
+            background-color: #eef2f6; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            overflow: hidden; 
+        }
+
+        /* The Node "Window" */
+        .node-card {
+            position: absolute;
+            width: 240px;
+            background: white;
+            border: 1px solid #a0aec0;
+            border-radius: 4px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .node-card:hover { border-color: #4299e1; box-shadow: 2px 4px 12px rgba(66, 153, 225, 0.2); z-index: 20; }
+
+        /* The Header */
+        .node-header {
+            background: linear-gradient(to bottom, #f7fafc, #edf2f7);
+            padding: 6px 10px;
+            border-bottom: 1px solid #cbd5e0;
+            border-radius: 3px 3px 0 0;
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: grab;
+        }
+        .node-header:active { cursor: grabbing; }
+
+        /* The Body */
+        .node-body { padding: 4px; background: #fff; border-radius: 0 0 3px 3px; font-size: 11px; }
+
+        /* State Rows */
+        .state-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 35px;
+            align-items: center;
+            padding: 2px 4px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-bottom: 1px;
+        }
+        .state-row:hover { background-color: #ebf8ff; border-color: #bee3f8; border-radius: 2px; }
+
+        .state-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #4a5568; }
+
+        /* The Bar Chart */
+        .bar-container {
+            height: 14px;
+            background-color: #edf2f7;
+            border: 1px solid #e2e8f0;
+            border-radius: 2px;
+            position: relative;
+            margin: 0 6px;
+        }
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(to bottom, #63b3ed, #4299e1);
+            border-right: 1px solid #3182ce;
+            border-radius: 1px;
+            transition: width 0.3s ease-out;
+        }
+        .bar-val { text-align: right; color: #2d3748; font-weight: 600; }
+
+        /* ACTIVE / EVIDENCE STATE */
+        .state-row.active .state-label { color: #c53030; font-weight: 700; }
+        .state-row.active .bar-fill { background: linear-gradient(to bottom, #fc8181, #f56565); border-right: 1px solid #c53030; }
+        .state-row.active .bar-container { background-color: #fff5f5; border-color: #feb2b2; }
+
+        #canvas { width: 100vw; height: 100vh; position: relative; }
+    </style>
 </head>
 <body>
 
     <div class="absolute top-0 left-0 w-full h-10 bg-white border-b border-gray-300 flex justify-between items-center px-4 z-50 shadow-sm">
         <div class="flex items-center gap-2">
             <i class="fas fa-network-wired text-blue-600"></i>
-            <span class="font-semibold text-gray-700 text-sm">Heart Disease Bayesian Network (v3 Corrected)</span>
+            <span class="font-semibold text-gray-700 text-sm">Heart Disease Bayesian Network</span>
         </div>
         <div class="flex items-center gap-3">
             <span class="text-xs text-gray-500 border-r pr-3 border-gray-300">
@@ -28,7 +109,7 @@
     <div id="canvas"></div>
 
     <script>
-        // Logic will go here
+        
     </script>
 </body>
 </html>
