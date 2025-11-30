@@ -109,7 +109,122 @@
     <div id="canvas"></div>
 
     <script>
-        
+        const modelDefinition = {
+            "nodes": [
+                // ROOTS
+                { "id": "age_bin", "title": "Age Group", "states": ["Younger (<50)", "Older (50+)"], "parents": [], "cpt": [0.5, 0.5] },
+                { "id": "sex", "title": "Sex", "states": ["Female", "Male"], "parents": [], "cpt": [0.5, 0.5] },
+
+                // PHYSIOLOGY
+                { "id": "trestbps_bin", "title": "Resting BP", "states": ["Normal", "High"], "parents": ["age_bin"], "cpt": [0.5, 0.5] },
+                { "id": "chol_bin", "title": "Cholesterol", "states": ["Normal", "High"], "parents": ["sex"], "cpt": [0.5, 0.5] },
+                // FIX 1: Max HR now influenced by Sex AND Age
+                { "id": "thalach_bin", "title": "Max Heart Rate", "states": ["Low", "Normal"], "parents": ["age_bin", "sex"], "cpt": [0.5, 0.5] },
+                { "id": "fbs", "title": "Fasting Sugar", "states": ["False", "True"], "parents": [], "cpt": [0.85, 0.15] },
+
+                // DIAGNOSTICS
+                { "id": "restecg", "title": "Rest ECG", "states": ["Normal", "Abnormal"], "parents": ["trestbps_bin"], "cpt": [0.5, 0.5] },
+                { "id": "slope", "title": "Slope Shape", "states": ["Upsloping", "Flat/Down"], "parents": [], "cpt": [0.5, 0.5] },
+                { "id": "oldpeak_bin", "title": "ST Depression", "states": ["Low", "High"], "parents": ["slope"], "cpt": [0.5, 0.5] },
+                { "id": "ca", "title": "Vessels (Ca)", "states": ["0", "1+"], "parents": [], "cpt": [0.5, 0.5] },
+                { "id": "thal", "title": "Thallium Test", "states": ["Normal", "Defect"], "parents": [], "cpt": [0.5, 0.5] },
+
+                // OUTCOME
+                { "id": "target", "title": "Disease Outcome", "states": ["Healthy", "Disease"], "parents": [], "cpt": [0.5, 0.5] }
+            ],
+            "edges": [
+                ["age_bin", "trestbps_bin"], ["age_bin", "thalach_bin"],
+                ["sex", "chol_bin"], ["sex", "thalach_bin"], // ADDED: Sex -> Max HR
+                
+                ["trestbps_bin", "restecg"],
+                
+                ["slope", "oldpeak_bin"],
+                
+                // ADDED: Connectivity to Target from Dead Ends
+                ["oldpeak_bin", "target"], 
+                ["ca", "target"], 
+                ["thal", "target"], 
+                ["fbs", "target"], 
+                ["chol_bin", "target"],
+                ["restecg", "target"], // ADDED: ECG -> Target
+                ["thalach_bin", "target"] // ADDED: Max HR -> Target
+            ]
+        };
+
+        const initialLayout = {
+            'age_bin': { x: 50, y: 60 }, 'sex': { x: 300, y: 60 },
+            
+            'trestbps_bin': { x: 50, y: 220 }, 'chol_bin': { x: 300, y: 220 }, 'thalach_bin': { x: 550, y: 220 },
+            
+            'restecg': { x: 50, y: 380 }, 'fbs': { x: 800, y: 380 },
+            
+            'slope': { x: 50, y: 540 }, 'oldpeak_bin': { x: 300, y: 540 }, 'ca': { x: 550, y: 540 }, 'thal': { x: 800, y: 540 },
+            
+            'target': { x: 425, y: 700 }
+        };
+
+       
+        class BayesNet {
+            constructor(def) {
+                this.nodes = def.nodes;
+                this.evidence = {};
+                this.nodeMap = {};
+                this.nodes.forEach(n => this.nodeMap[n.id] = n);
+            }
+
+            setEvidence(nodeId, stateIndex) {
+                if (this.evidence[nodeId] === stateIndex) {
+                    delete this.evidence[nodeId];
+                } else {
+                    this.evidence[nodeId] = stateIndex;
+                }
+                this.updateBeliefs();
+            }
+
+            resetEvidence() {
+                this.evidence = {};
+                this.updateBeliefs();
+            }
+
+            updateBeliefs() {
+                this.nodes.forEach(node => {
+                    let probs = [];
+
+                    if (this.evidence[node.id] !== undefined) {
+                        probs = new Array(node.states.length).fill(0);
+                        probs[this.evidence[node.id]] = 100;
+                    } 
+                    else {
+                        // Base 50/50
+                        let p1 = 50; 
+                        
+                       
+                        if (node.id === 'target') {
+                             if(this.hasEvidence('oldpeak_bin', 1)) p1 -= 30; 
+                             if(this.hasEvidence('ca', 1)) p1 -= 35;          
+                             if(this.hasEvidence('thal', 1)) p1 -= 25;        
+                             if(this.hasEvidence('age_bin', 1)) p1 -= 10;     
+                             if(this.hasEvidence('restecg', 1)) p1 -= 15; // ECG Abnormal -> Disease
+                             if(this.hasEvidence('thalach_bin', 0)) p1 -= 15; // Low HR -> Disease
+                        }
+                        
+                        
+                        if (node.id === 'trestbps_bin' && this.hasEvidence('age_bin', 1)) p1 -= 20; 
+                        if (node.id === 'thalach_bin') {
+                            if (this.hasEvidence('age_bin', 1)) p1 -= 20; // Old -> Low MaxHR
+                            if (this.hasEvidence('sex', 0)) p1 += 5;      // Female -> Slightly diff baseline
+                        }
+                        if (node.id === 'chol_bin' && this.hasEvidence('sex', 0)) p1 += 10; 
+
+                        p1 = Math.max(5, Math.min(95, p1));
+                        probs = [p1, 100 - p1];
+                    }
+                    renderUpdate(node.id, probs, this.evidence[node.id]);
+                });
+            }
+            
+            hasEvidence(nodeId, stateIdx) { return this.evidence[nodeId] === stateIdx; }
+        }
     </script>
 </body>
 </html>
