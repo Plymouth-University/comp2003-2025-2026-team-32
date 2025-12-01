@@ -225,6 +225,117 @@
             
             hasEvidence(nodeId, stateIdx) { return this.evidence[nodeId] === stateIdx; }
         }
+        const canvas = document.getElementById('canvas');
+        let lines = [];
+
+        function renderNode(node) {
+            const pos = initialLayout[node.id] || {x: 100, y: 100};
+            
+            const div = document.createElement('div');
+            div.className = 'node-card';
+            div.id = `node-${node.id}`;
+            div.style.left = pos.x + 'px';
+            div.style.top = pos.y + 'px';
+            
+            let rowsHtml = '';
+            node.states.forEach((state, idx) => {
+                rowsHtml += `
+                    <div class="state-row" id="row-${node.id}-${idx}" onclick="bn.setEvidence('${node.id}', ${idx})">
+                        <div class="state-label" title="${state}">${state}</div>
+                        <div class="bar-container">
+                            <div class="bar-fill" id="bar-${node.id}-${idx}" style="width: 50%"></div>
+                        </div>
+                        <div class="bar-val" id="val-${node.id}-${idx}">50%</div>
+                    </div>
+                `;
+            });
+
+            div.innerHTML = `
+                <div class="node-header">
+                    <span>${node.title}</span>
+                    <i class="fas fa-chart-bar text-gray-400"></i>
+                </div>
+                <div class="node-body">${rowsHtml}</div>
+            `;
+            
+            makeDraggable(div);
+            canvas.appendChild(div);
+        }
+
+        function renderUpdate(nodeId, probs, activeIdx) {
+            probs.forEach((p, idx) => {
+                const bar = document.getElementById(`bar-${nodeId}-${idx}`);
+                const val = document.getElementById(`val-${nodeId}-${idx}`);
+                const row = document.getElementById(`row-${nodeId}-${idx}`);
+                
+                bar.style.width = p + '%';
+                val.innerText = Math.round(p);
+                
+                if (activeIdx === idx) {
+                    row.classList.add('active');
+                } else {
+                    row.classList.remove('active');
+                }
+            });
+        }
+
+        function drawLines() {
+            lines.forEach(l => l.remove());
+            lines = [];
+            modelDefinition.edges.forEach(edge => {
+                const start = document.getElementById(`node-${edge[0]}`);
+                const end = document.getElementById(`node-${edge[1]}`);
+                if (start && end) {
+                    lines.push(new LeaderLine(start, end, {
+                        color: '#a0aec0', 
+                        size: 2, 
+                        path: 'grid', 
+                        startSocket: 'bottom', 
+                        endSocket: 'top',
+                        plug: 'arrow3',
+                        plugSize: 1.5
+                    }));
+                }
+            });
+        }
+
+        function makeDraggable(el) {
+            let isDragging = false, startX, startY, initialLeft, initialTop;
+            const header = el.querySelector('.node-header');
+
+            header.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialLeft = el.offsetLeft;
+                initialTop = el.offsetTop;
+                el.style.zIndex = 100;
+                e.preventDefault();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                el.style.left = (initialLeft + (e.clientX - startX)) + 'px';
+                el.style.top = (initialTop + (e.clientY - startY)) + 'px';
+                lines.forEach(l => l.position());
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    el.style.zIndex = 10;
+                }
+            });
+        }
+
+        const bn = new BayesNet(modelDefinition);
+        window.onload = function() {
+            modelDefinition.nodes.forEach(renderNode);
+            setTimeout(() => {
+                drawLines();
+                bn.updateBeliefs();
+            }, 100);
+        };
     </script>
 </body>
 </html>
