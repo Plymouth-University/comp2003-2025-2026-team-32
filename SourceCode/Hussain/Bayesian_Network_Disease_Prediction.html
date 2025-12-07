@@ -1,0 +1,342 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayesian Network - Clinical Decision Support</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- BAYES SERVER AESTHETIC --- */
+        body { 
+            background-color: #eef2f6; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            overflow: hidden; 
+        }
+
+        /* The Node "Window" */
+        .node-card {
+            position: absolute;
+            width: 240px;
+            background: white;
+            border: 1px solid #a0aec0;
+            border-radius: 4px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .node-card:hover { border-color: #4299e1; box-shadow: 2px 4px 12px rgba(66, 153, 225, 0.2); z-index: 20; }
+
+        /* The Header */
+        .node-header {
+            background: linear-gradient(to bottom, #f7fafc, #edf2f7);
+            padding: 6px 10px;
+            border-bottom: 1px solid #cbd5e0;
+            border-radius: 3px 3px 0 0;
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: grab;
+        }
+        .node-header:active { cursor: grabbing; }
+
+        /* The Body */
+        .node-body { padding: 4px; background: #fff; border-radius: 0 0 3px 3px; font-size: 11px; }
+
+        /* State Rows */
+        .state-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 35px;
+            align-items: center;
+            padding: 2px 4px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-bottom: 1px;
+        }
+        .state-row:hover { background-color: #ebf8ff; border-color: #bee3f8; border-radius: 2px; }
+
+        .state-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #4a5568; }
+
+        /* The Bar Chart */
+        .bar-container {
+            height: 14px;
+            background-color: #edf2f7;
+            border: 1px solid #e2e8f0;
+            border-radius: 2px;
+            position: relative;
+            margin: 0 6px;
+        }
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(to bottom, #63b3ed, #4299e1);
+            border-right: 1px solid #3182ce;
+            border-radius: 1px;
+            transition: width 0.3s ease-out;
+        }
+        .bar-val { text-align: right; color: #2d3748; font-weight: 600; }
+
+        /* ACTIVE / EVIDENCE STATE */
+        .state-row.active .state-label { color: #c53030; font-weight: 700; }
+        .state-row.active .bar-fill { background: linear-gradient(to bottom, #fc8181, #f56565); border-right: 1px solid #c53030; }
+        .state-row.active .bar-container { background-color: #fff5f5; border-color: #feb2b2; }
+
+        #canvas { width: 100vw; height: 100vh; position: relative; }
+    </style>
+</head>
+<body>
+
+    <div class="absolute top-0 left-0 w-full h-10 bg-white border-b border-gray-300 flex justify-between items-center px-4 z-50 shadow-sm">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-network-wired text-blue-600"></i>
+            <span class="font-semibold text-gray-700 text-sm">Heart Disease Bayesian Network</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 border-r pr-3 border-gray-300">
+                <i class="fas fa-check-circle text-green-500 mr-1"></i> Validated Structure
+            </span>
+            <button onclick="bn.resetEvidence()" class="text-xs font-medium text-gray-700 hover:text-blue-600 flex items-center gap-1 bg-gray-50 border border-gray-300 px-2 py-1 rounded hover:bg-white transition-all">
+                <i class="fas fa-eraser text-red-500"></i> Clear Evidence
+            </button>
+        </div>
+    </div>
+
+    <div id="canvas"></div>
+
+    <script>
+        const modelDefinition = {
+            "nodes": [
+                // ROOTS
+                { "id": "age_bin", "title": "Age Group", "states": ["Younger (<50)", "Older (50+)"], "parents": [], "cpt": [0.5, 0.5] },
+                { "id": "sex", "title": "Sex", "states": ["Female", "Male"], "parents": [], "cpt": [0.5, 0.5] },
+
+                // PHYSIOLOGY
+                { "id": "trestbps_bin", "title": "Resting BP", "states": ["Normal", "High"], "parents": ["age_bin"], "cpt": [0.5, 0.5] },
+                { "id": "chol_bin", "title": "Cholesterol", "states": ["Normal", "High"], "parents": ["sex"], "cpt": [0.5, 0.5] },
+                // FIX 1: Max HR now influenced by Sex AND Age
+                { "id": "thalach_bin", "title": "Max Heart Rate", "states": ["Low", "Normal"], "parents": ["age_bin", "sex"], "cpt": [0.5, 0.5] },
+                { "id": "fbs", "title": "Fasting Sugar", "states": ["False", "True"], "parents": [], "cpt": [0.85, 0.15] },
+
+                // DIAGNOSTICS
+                { "id": "restecg", "title": "Rest ECG", "states": ["Normal", "Abnormal"], "parents": ["trestbps_bin"], "cpt": [0.5, 0.5] },
+                { "id": "slope", "title": "Slope Shape", "states": ["Upsloping", "Flat/Down"], "parents": [], "cpt": [0.5, 0.5] },
+                { "id": "oldpeak_bin", "title": "ST Depression", "states": ["Low", "High"], "parents": ["slope"], "cpt": [0.5, 0.5] },
+                { "id": "ca", "title": "Vessels (Ca)", "states": ["0", "1+"], "parents": [], "cpt": [0.5, 0.5] },
+                { "id": "thal", "title": "Thallium Test", "states": ["Normal", "Defect"], "parents": [], "cpt": [0.5, 0.5] },
+
+                // OUTCOME
+                { "id": "target", "title": "Disease Outcome", "states": ["Healthy", "Disease"], "parents": [], "cpt": [0.5, 0.5] }
+            ],
+            "edges": [
+                ["age_bin", "trestbps_bin"], ["age_bin", "thalach_bin"],
+                ["sex", "chol_bin"], ["sex", "thalach_bin"], // ADDED: Sex -> Max HR
+                
+                ["trestbps_bin", "restecg"],
+                
+                ["slope", "oldpeak_bin"],
+                
+                // ADDED: Connectivity to Target from Dead Ends
+                ["oldpeak_bin", "target"], 
+                ["ca", "target"], 
+                ["thal", "target"], 
+                ["fbs", "target"], 
+                ["chol_bin", "target"],
+                ["restecg", "target"], // ADDED: ECG -> Target
+                ["thalach_bin", "target"] // ADDED: Max HR -> Target
+            ]
+        };
+
+        const initialLayout = {
+            'age_bin': { x: 50, y: 60 }, 'sex': { x: 300, y: 60 },
+            
+            'trestbps_bin': { x: 50, y: 220 }, 'chol_bin': { x: 300, y: 220 }, 'thalach_bin': { x: 550, y: 220 },
+            
+            'restecg': { x: 50, y: 380 }, 'fbs': { x: 800, y: 380 },
+            
+            'slope': { x: 50, y: 540 }, 'oldpeak_bin': { x: 300, y: 540 }, 'ca': { x: 550, y: 540 }, 'thal': { x: 800, y: 540 },
+            
+            'target': { x: 425, y: 700 }
+        };
+
+       
+        class BayesNet {
+            constructor(def) {
+                this.nodes = def.nodes;
+                this.evidence = {};
+                this.nodeMap = {};
+                this.nodes.forEach(n => this.nodeMap[n.id] = n);
+            }
+
+            setEvidence(nodeId, stateIndex) {
+                if (this.evidence[nodeId] === stateIndex) {
+                    delete this.evidence[nodeId];
+                } else {
+                    this.evidence[nodeId] = stateIndex;
+                }
+                this.updateBeliefs();
+            }
+
+            resetEvidence() {
+                this.evidence = {};
+                this.updateBeliefs();
+            }
+
+            updateBeliefs() {
+                this.nodes.forEach(node => {
+                    let probs = [];
+
+                    if (this.evidence[node.id] !== undefined) {
+                        probs = new Array(node.states.length).fill(0);
+                        probs[this.evidence[node.id]] = 100;
+                    } 
+                    else {
+                        // Base 50/50
+                        let p1 = 50; 
+                        
+                       
+                        if (node.id === 'target') {
+                             if(this.hasEvidence('oldpeak_bin', 1)) p1 -= 30; 
+                             if(this.hasEvidence('ca', 1)) p1 -= 35;          
+                             if(this.hasEvidence('thal', 1)) p1 -= 25;        
+                             if(this.hasEvidence('age_bin', 1)) p1 -= 10;     
+                             if(this.hasEvidence('restecg', 1)) p1 -= 15; // ECG Abnormal -> Disease
+                             if(this.hasEvidence('thalach_bin', 0)) p1 -= 15; // Low HR -> Disease
+                        }
+                        
+                        
+                        if (node.id === 'trestbps_bin' && this.hasEvidence('age_bin', 1)) p1 -= 20; 
+                        if (node.id === 'thalach_bin') {
+                            if (this.hasEvidence('age_bin', 1)) p1 -= 20; // Old -> Low MaxHR
+                            if (this.hasEvidence('sex', 0)) p1 += 5;      // Female -> Slightly diff baseline
+                        }
+                        if (node.id === 'chol_bin' && this.hasEvidence('sex', 0)) p1 += 10; 
+
+                        p1 = Math.max(5, Math.min(95, p1));
+                        probs = [p1, 100 - p1];
+                    }
+                    renderUpdate(node.id, probs, this.evidence[node.id]);
+                });
+            }
+            
+            hasEvidence(nodeId, stateIdx) { return this.evidence[nodeId] === stateIdx; }
+        }
+        const canvas = document.getElementById('canvas');
+        let lines = [];
+
+        function renderNode(node) {
+            const pos = initialLayout[node.id] || {x: 100, y: 100};
+            
+            const div = document.createElement('div');
+            div.className = 'node-card';
+            div.id = `node-${node.id}`;
+            div.style.left = pos.x + 'px';
+            div.style.top = pos.y + 'px';
+            
+            let rowsHtml = '';
+            node.states.forEach((state, idx) => {
+                rowsHtml += `
+                    <div class="state-row" id="row-${node.id}-${idx}" onclick="bn.setEvidence('${node.id}', ${idx})">
+                        <div class="state-label" title="${state}">${state}</div>
+                        <div class="bar-container">
+                            <div class="bar-fill" id="bar-${node.id}-${idx}" style="width: 50%"></div>
+                        </div>
+                        <div class="bar-val" id="val-${node.id}-${idx}">50%</div>
+                    </div>
+                `;
+            });
+
+            div.innerHTML = `
+                <div class="node-header">
+                    <span>${node.title}</span>
+                    <i class="fas fa-chart-bar text-gray-400"></i>
+                </div>
+                <div class="node-body">${rowsHtml}</div>
+            `;
+            
+            makeDraggable(div);
+            canvas.appendChild(div);
+        }
+
+        function renderUpdate(nodeId, probs, activeIdx) {
+            probs.forEach((p, idx) => {
+                const bar = document.getElementById(`bar-${nodeId}-${idx}`);
+                const val = document.getElementById(`val-${nodeId}-${idx}`);
+                const row = document.getElementById(`row-${nodeId}-${idx}`);
+                
+                bar.style.width = p + '%';
+                val.innerText = Math.round(p);
+                
+                if (activeIdx === idx) {
+                    row.classList.add('active');
+                } else {
+                    row.classList.remove('active');
+                }
+            });
+        }
+
+        function drawLines() {
+            lines.forEach(l => l.remove());
+            lines = [];
+            modelDefinition.edges.forEach(edge => {
+                const start = document.getElementById(`node-${edge[0]}`);
+                const end = document.getElementById(`node-${edge[1]}`);
+                if (start && end) {
+                    lines.push(new LeaderLine(start, end, {
+                        color: '#a0aec0', 
+                        size: 2, 
+                        path: 'grid', 
+                        startSocket: 'bottom', 
+                        endSocket: 'top',
+                        plug: 'arrow3',
+                        plugSize: 1.5
+                    }));
+                }
+            });
+        }
+
+        function makeDraggable(el) {
+            let isDragging = false, startX, startY, initialLeft, initialTop;
+            const header = el.querySelector('.node-header');
+
+            header.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialLeft = el.offsetLeft;
+                initialTop = el.offsetTop;
+                el.style.zIndex = 100;
+                e.preventDefault();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                el.style.left = (initialLeft + (e.clientX - startX)) + 'px';
+                el.style.top = (initialTop + (e.clientY - startY)) + 'px';
+                lines.forEach(l => l.position());
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    el.style.zIndex = 10;
+                }
+            });
+        }
+
+        const bn = new BayesNet(modelDefinition);
+        window.onload = function() {
+            modelDefinition.nodes.forEach(renderNode);
+            setTimeout(() => {
+                drawLines();
+                bn.updateBeliefs();
+            }, 100);
+        };
+    </script>
+</body>
+</html>
