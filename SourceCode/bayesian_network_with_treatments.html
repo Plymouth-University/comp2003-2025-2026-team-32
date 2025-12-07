@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayesian Network - Clinical Decision Support with Treatments</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { 
+            background-color: #eef2f6; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            overflow-x: hidden; 
+        }
+
+        .node-card {
+            position: absolute;
+            width: 240px;
+            background: white;
+            border: 1px solid #a0aec0;
+            border-radius: 4px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .node-card:hover { 
+            border-color: #4299e1; 
+            box-shadow: 2px 4px 12px rgba(66, 153, 225, 0.2); 
+            z-index: 20; 
+        }
+
+        /* Treatment nodes get special styling */
+        .node-card.treatment {
+            border: 2px solid #48bb78;
+            background: linear-gradient(135deg, #f0fff4 0%, #ffffff 100%);
+        }
+        .node-card.treatment:hover {
+            border-color: #38a169;
+            box-shadow: 2px 4px 12px rgba(72, 187, 120, 0.3);
+        }
+
+        .node-header {
+            background: linear-gradient(to bottom, #f7fafc, #edf2f7);
+            padding: 6px 10px;
+            border-bottom: 1px solid #cbd5e0;
+            border-radius: 3px 3px 0 0;
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: grab;
+        }
+        .node-header:active { cursor: grabbing; }
+
+        /* Treatment node headers */
+        .node-card.treatment .node-header {
+            background: linear-gradient(to bottom, #c6f6d5, #9ae6b4);
+            color: #22543d;
+        }
+
+        .node-body { 
+            padding: 4px; 
+            background: #fff; 
+            border-radius: 0 0 3px 3px; 
+            font-size: 11px; 
+        }
+
+        .state-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 40px;
+            align-items: center;
+            padding: 2px 4px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-bottom: 1px;
+        }
+        .state-row:hover { 
+            background-color: #ebf8ff; 
+            border-color: #bee3f8; 
+            border-radius: 2px; 
+        }
+
+        .state-label { 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            color: #4a5568; 
+            font-size: 10px;
+        }
+
+        .bar-container {
+            height: 14px;
+            background-color: #edf2f7;
+            border: 1px solid #e2e8f0;
+            border-radius: 2px;
+            position: relative;
+            margin: 0 4px;
+        }
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(to bottom, #63b3ed, #4299e1);
+            border-right: 1px solid #3182ce;
+            border-radius: 1px;
+            transition: width 0.3s ease-out;
+        }
+        .bar-val { 
+            text-align: right; 
+            color: #2d3748; 
+            font-weight: 600; 
+            font-size: 10px;
+        }
+
+        /* ACTIVE / EVIDENCE STATE */
+        .state-row.active .state-label { color: #c53030; font-weight: 700; }
+        .state-row.active .bar-fill { 
+            background: linear-gradient(to bottom, #fc8181, #f56565); 
+            border-right: 1px solid #c53030; 
+        }
+        .state-row.active .bar-container { 
+            background-color: #fff5f5; 
+            border-color: #feb2b2; 
+        }
+
+        /* Treatment intervention active state */
+        .node-card.treatment .state-row.active .bar-fill {
+            background: linear-gradient(to bottom, #68d391, #48bb78);
+            border-right: 1px solid #38a169;
+        }
+        .node-card.treatment .state-row.active .bar-container {
+            background-color: #f0fff4;
+            border-color: #9ae6b4;
+        }
+
+        #canvas { 
+            width: 100%; 
+            min-height: 100vh; 
+            height: 1400px;
+            position: relative; 
+        }
+
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+        .legend-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="absolute top-0 left-0 w-full h-10 bg-white border-b border-gray-300 flex justify-between items-center px-4 z-50 shadow-sm">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-network-wired text-blue-600"></i>
+            <span class="font-semibold text-gray-700 text-sm">Heart Disease BN with Treatment Interventions</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 border-r pr-3 border-gray-300">
+                <i class="fas fa-check-circle text-green-500 mr-1"></i> Extended Model
+            </span>
+            <button onclick="bn.resetEvidence()" class="text-xs font-medium text-gray-700 hover:text-blue-600 flex items-center gap-1 bg-gray-50 border border-gray-300 px-2 py-1 rounded hover:bg-white transition-all">
+                <i class="fas fa-eraser text-red-500"></i> Clear Evidence
+            </button>
+        </div>
+    </div>
+
+    <div id="canvas"></div>
+
+    <div class="legend">
+        <div class="font-semibold text-xs mb-2 text-gray-700">Node Types</div>
+        <div class="legend-item">
+            <div class="legend-box" style="background: #edf2f7; border: 1px solid #a0aec0;"></div>
+            <span>Risk Factors</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background: linear-gradient(135deg, #f0fff4, #c6f6d5); border: 2px solid #48bb78;"></div>
+            <span>Treatments</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background: #fef5e7; border: 1px solid #f39c12;"></div>
+            <span>Disease Outcome</span>
+        </div>
+    </div>
+
+    <script>
+        const modelDefinition = {
+            "nodes": [
+                // TIER 1: ROOTS (Demographics)
+                { 
+                    "id": "age_bin", 
+                    "title": "Age Group", 
+                    "states": ["Young (<50)", "Old (50+)"], 
+                    "parents": [], 
+                    "cpt": [0.5, 0.5],
+                    "tier": "root"
+                },
+                { 
+                    "id": "sex", 
+                    "title": "Sex", 
+                    "states": ["Female", "Male"], 
+                    "parents": [], 
+                    "cpt": [0.5, 0.5],
+                    "tier": "root"
+                },
+
+                // TIER 2: BASELINE CLINICAL FACTORS (Pre-treatment)
+                { 
+                    "id": "trestbps_baseline", 
+                    "title": "BP (Baseline)", 
+                    "states": ["Normal", "Elevated", "High"], 
+                    "parents": ["age_bin", "sex"], 
+                    "cpt": [0.4, 0.3, 0.3],
+                    "tier": "clinical"
+                },
+                { 
+                    "id": "chol_baseline", 
+                    "title": "Cholesterol (Baseline)", 
+                    "states": ["Normal", "Borderline", "High"], 
+                    "parents": ["age_bin", "sex"], 
+                    "cpt": [0.4, 0.3, 0.3],
+                    "tier": "clinical"
+                },
+                { 
+                    "id": "fbs", 
+                    "title": "Fasting Sugar", 
+                    "states": ["Normal", "High"], 
+                    "parents": ["age_bin"], 
+                    "cpt": [0.85, 0.15],
+                    "tier": "clinical"
+                },
+
+                // TIER 3: TREATMENT/INTERVENTION NODES (NEW!)
+                { 
+                    "id": "lifestyle", 
+                    "title": "Lifestyle Changes", 
+                    "states": ["None", "Moderate", "Intensive"], 
+                    "parents": ["trestbps_baseline", "chol_baseline"], 
+                    "cpt": [0.5, 0.3, 0.2],
+                    "tier": "treatment",
+                    "isTreatment": true,
+                    "description": "Diet, exercise, smoking cessation"
+                },
+                { 
+                    "id": "bp_meds", 
+                    "title": "BP Medication", 
+                    "states": ["None", "ACE-I", "Beta-Block", "Diuretic"], 
+                    "parents": ["trestbps_baseline"], 
+                    "cpt": [0.4, 0.2, 0.2, 0.2],
+                    "tier": "treatment",
+                    "isTreatment": true,
+                    "description": "Antihypertensive therapy"
+                },
+                { 
+                    "id": "chol_meds", 
+                    "title": "Cholesterol Meds", 
+                    "states": ["None", "Low Statin", "High Statin"], 
+                    "parents": ["chol_baseline"], 
+                    "cpt": [0.5, 0.3, 0.2],
+                    "tier": "treatment",
+                    "isTreatment": true,
+                    "description": "Lipid-lowering therapy"
+                },
+
+                // TIER 4: POST-TREATMENT CLINICAL (Modified by interventions)
+                { 
+                    "id": "trestbps_current", 
+                    "title": "BP (Current)", 
+                    "states": ["Normal", "Elevated", "High"], 
+                    "parents": ["trestbps_baseline", "bp_meds", "lifestyle"], 
+                    "cpt": [0.33, 0.33, 0.34],
+                    "tier": "clinical_post"
+                },
+                { 
+                    "id": "chol_current", 
+                    "title": "Cholesterol (Current)", 
+                    "states": ["Normal", "Borderline", "High"], 
+                    "parents": ["chol_baseline", "chol_meds", "lifestyle"], 
+                    "cpt": [0.33, 0.33, 0.34],
+                    "tier": "clinical_post"
+                },
+
+                // TIER 5: EXERCISE TEST RESULTS
+                { 
+                    "id": "thalach_bin", 
+                    "title": "Max Heart Rate", 
+                    "states": ["Low", "Normal", "High"], 
+                    "parents": ["age_bin", "sex", "lifestyle"], 
+                    "cpt": [0.33, 0.34, 0.33],
+                    "tier": "exercise"
+                },
+                { 
+                    "id": "oldpeak_bin", 
+                    "title": "ST Depression", 
+                    "states": ["None", "Mild", "Severe"], 
+                    "parents": ["trestbps_current"], 
+                    "cpt": [0.5, 0.3, 0.2],
+                    "tier": "exercise"
+                },
+                { 
+                    "id": "slope", 
+                    "title": "ST Slope", 
+                    "states": ["Upslope", "Flat", "Downslope"], 
+                    "parents": [], 
+                    "cpt": [0.5, 0.3, 0.2],
+                    "tier": "exercise"
+                },
+                { 
+                    "id": "ca", 
+                    "title": "Vessels (Ca)", 
+                    "states": ["0", "1", "2-3"], 
+                    "parents": ["chol_current"], 
+                    "cpt": [0.5, 0.3, 0.2],
+                    "tier": "exercise"
+                },
+
+                // TIER 6: DIAGNOSTIC TESTS
+                { 
+                    "id": "restecg", 
+                    "title": "Rest ECG", 
+                    "states": ["Normal", "ST-T Abnorm", "LVH"], 
+                    "parents": ["trestbps_current"], 
+                    "cpt": [0.5, 0.3, 0.2],
+                    "tier": "diagnostic"
+                },
+                { 
+                    "id": "thal", 
+                    "title": "Thallium Test", 
+                    "states": ["Normal", "Fixed", "Reversible"], 
+                    "parents": ["ca"], 
+                    "cpt": [0.5, 0.3, 0.2],
+                    "tier": "diagnostic"
+                },
+
+                // TIER 7: DISEASE OUTCOME
+                { 
+                    "id": "target", 
+                    "title": "Disease Outcome", 
+                    "states": ["Healthy", "Disease"], 
+                    "parents": ["trestbps_current", "chol_current", "oldpeak_bin", "ca", "thal", "thalach_bin", "fbs"], 
+                    "cpt": [0.5, 0.5],
+                    "tier": "outcome"
+                },
+
+                // TIER 8: SYMPTOMS
+                { 
+                    "id": "cp", 
+                    "title": "Chest Pain", 
+                    "states": ["None", "Atypical", "Non-anginal", "Typical"], 
+                    "parents": ["target"], 
+                    "cpt": [0.4, 0.3, 0.2, 0.1],
+                    "tier": "symptom"
+                },
+                { 
+                    "id": "exang", 
+                    "title": "Exercise Angina", 
+                    "states": ["No", "Yes"], 
+                    "parents": ["target"], 
+                    "cpt": [0.7, 0.3],
+                    "tier": "symptom"
+                }
+            ],
+            "edges": [
+                // Root -> Baseline Clinical
+                ["age_bin", "trestbps_baseline"],
+                ["sex", "trestbps_baseline"],
+                ["age_bin", "chol_baseline"],
+                ["sex", "chol_baseline"],
+                ["age_bin", "fbs"],
+
+                // Baseline -> Treatment Decisions
+                ["trestbps_baseline", "lifestyle"],
+                ["chol_baseline", "lifestyle"],
+                ["trestbps_baseline", "bp_meds"],
+                ["chol_baseline", "chol_meds"],
+
+                // Baseline + Treatments -> Current Clinical
+                ["trestbps_baseline", "trestbps_current"],
+                ["bp_meds", "trestbps_current"],
+                ["lifestyle", "trestbps_current"],
+                
+                ["chol_baseline", "chol_current"],
+                ["chol_meds", "chol_current"],
+                ["lifestyle", "chol_current"],
+
+                // Current Clinical -> Exercise Tests
+                ["age_bin", "thalach_bin"],
+                ["sex", "thalach_bin"],
+                ["lifestyle", "thalach_bin"],
+                
+                ["trestbps_current", "oldpeak_bin"],
+                ["chol_current", "ca"],
+
+                // Current Clinical -> Diagnostics
+                ["trestbps_current", "restecg"],
+                ["ca", "thal"],
+
+                // Everything -> Disease
+                ["trestbps_current", "target"],
+                ["chol_current", "target"],
+                ["oldpeak_bin", "target"],
+                ["ca", "target"],
+                ["thal", "target"],
+                ["thalach_bin", "target"],
+                ["fbs", "target"],
+
+                // Disease -> Symptoms
+                ["target", "cp"],
+                ["target", "exang"]
+            ]
+        };
+
+        const initialLayout = {
+            // Tier 1: Roots (top)
+            'age_bin': { x: 100, y: 80 }, 
+            'sex': { x: 400, y: 80 },
+            
+            // Tier 2: Baseline Clinical
+            'trestbps_baseline': { x: 50, y: 220 }, 
+            'chol_baseline': { x: 350, y: 220 }, 
+            'fbs': { x: 650, y: 220 },
+            
+            // Tier 3: TREATMENT NODES (highlighted row)
+            'lifestyle': { x: 200, y: 380 }, 
+            'bp_meds': { x: 500, y: 380 }, 
+            'chol_meds': { x: 800, y: 380 },
+            
+            // Tier 4: Current Clinical (post-treatment)
+            'trestbps_current': { x: 100, y: 540 }, 
+            'chol_current': { x: 450, y: 540 },
+            
+            // Tier 5: Exercise Tests
+            'thalach_bin': { x: 50, y: 700 }, 
+            'oldpeak_bin': { x: 300, y: 700 }, 
+            'slope': { x: 550, y: 700 },
+            'ca': { x: 800, y: 700 },
+            
+            // Tier 6: Diagnostic Tests
+            'restecg': { x: 150, y: 860 }, 
+            'thal': { x: 500, y: 860 },
+            
+            // Tier 7: Disease Outcome
+            'target': { x: 350, y: 1020 },
+            
+            // Tier 8: Symptoms
+            'cp': { x: 200, y: 1180 }, 
+            'exang': { x: 500, y: 1180 }
+        };
+
+        class BayesNet {
+            constructor(def) {
+                this.nodes = def.nodes;
+                this.evidence = {};
+                this.nodeMap = {};
+                this.nodes.forEach(n => this.nodeMap[n.id] = n);
+            }
+
+            setEvidence(nodeId, stateIndex) {
+                if (this.evidence[nodeId] === stateIndex) {
+                    delete this.evidence[nodeId];
+                } else {
+                    this.evidence[nodeId] = stateIndex;
+                }
+                this.updateBeliefs();
+            }
+
+            resetEvidence() {
+                this.evidence = {};
+                this.updateBeliefs();
+            }
+
+            updateBeliefs() {
+                this.nodes.forEach(node => {
+                    let probs = [];
+
+                    if (this.evidence[node.id] !== undefined) {
+                        // Hard evidence set
+                        probs = new Array(node.states.length).fill(0);
+                        probs[this.evidence[node.id]] = 100;
+                    } 
+                    else {
+                        // SIMPLIFIED INFERENCE (demonstration purposes)
+                        probs = this.calculateNodeProbabilities(node);
+                    }
+                    
+                    renderUpdate(node.id, probs, this.evidence[node.id]);
+                });
+            }
+
+            calculateNodeProbabilities(node) {
+                const numStates = node.states.length;
+                let probs = new Array(numStates).fill(100 / numStates);
+
+                // TREATMENT EFFECT LOGIC
+                
+                // BP Medication effects on Current BP
+                if (node.id === 'trestbps_current') {
+                    const baseline = this.evidence['trestbps_baseline'];
+                    const meds = this.evidence['bp_meds'];
+                    const lifestyle = this.evidence['lifestyle'];
+
+                    // Start with baseline distribution
+                    if (baseline === 2) { // High BP baseline
+                        probs = [10, 25, 65]; // [Normal, Elevated, High]
+                        
+                        // Apply medication effects
+                        if (meds === 1) { // ACE-I: moderate reduction
+                            probs = [25, 40, 35];
+                        } else if (meds === 2) { // Beta-blocker: moderate reduction
+                            probs = [20, 45, 35];
+                        } else if (meds === 3) { // Diuretic: strong reduction
+                            probs = [30, 45, 25];
+                        }
+                        
+                        // Apply lifestyle effects
+                        if (lifestyle === 1) { // Moderate lifestyle
+                            probs = probs.map((p, i) => i === 0 ? p + 10 : p - 5);
+                        } else if (lifestyle === 2) { // Intensive lifestyle
+                            probs = probs.map((p, i) => i === 0 ? p + 20 : p - 10);
+                        }
+                    } else if (baseline === 1) { // Elevated BP baseline
+                        probs = [30, 50, 20];
+                        if (meds > 0) probs = [50, 35, 15];
+                        if (lifestyle === 2) probs = [65, 25, 10];
+                    } else { // Normal BP baseline
+                        probs = [70, 20, 10];
+                    }
+                }
+
+                // Cholesterol medication effects on Current Cholesterol
+                if (node.id === 'chol_current') {
+                    const baseline = this.evidence['chol_baseline'];
+                    const meds = this.evidence['chol_meds'];
+                    const lifestyle = this.evidence['lifestyle'];
+
+                    if (baseline === 2) { // High cholesterol baseline
+                        probs = [15, 30, 55];
+                        
+                        if (meds === 1) { // Low statin
+                            probs = [30, 40, 30];
+                        } else if (meds === 2) { // High statin
+                            probs = [50, 35, 15];
+                        }
+                        
+                        if (lifestyle === 2) { // Intensive lifestyle
+                            probs = probs.map((p, i) => i === 0 ? p + 15 : p - 7.5);
+                        }
+                    } else if (baseline === 1) { // Borderline
+                        probs = [35, 45, 20];
+                        if (meds > 0) probs = [55, 30, 15];
+                    } else { // Normal
+                        probs = [70, 20, 10];
+                    }
+                }
+
+                // Max HR influenced by lifestyle
+                if (node.id === 'thalach_bin') {
+                    const age = this.evidence['age_bin'];
+                    const lifestyle = this.evidence['lifestyle'];
+                    
+                    if (age === 1) { // Old age
+                        probs = [55, 35, 10]; // [Low, Normal, High]
+                        if (lifestyle === 2) { // Intensive exercise improves max HR
+                            probs = [30, 50, 20];
+                        }
+                    } else { // Young
+                        probs = [15, 50, 35];
+                    }
+                }
+
+                // Disease outcome influenced by all factors INCLUDING treatments
+                if (node.id === 'target') {
+                    let diseaseRisk = 50; // Start at 50% baseline
+
+                    // Risk factors INCREASE disease risk
+                    if (this.hasEvidence('trestbps_current', 2)) diseaseRisk += 20; // High BP
+                    if (this.hasEvidence('trestbps_current', 1)) diseaseRisk += 10; // Elevated BP
+                    
+                    if (this.hasEvidence('chol_current', 2)) diseaseRisk += 20; // High chol
+                    if (this.hasEvidence('chol_current', 1)) diseaseRisk += 10; // Borderline chol
+                    
+                    if (this.hasEvidence('oldpeak_bin', 2)) diseaseRisk += 25; // Severe ST depression
+                    if (this.hasEvidence('ca', 2)) diseaseRisk += 30; // Multiple vessels
+                    if (this.hasEvidence('thal', 2)) diseaseRisk += 20; // Reversible defect
+                    if (this.hasEvidence('thalach_bin', 0)) diseaseRisk += 15; // Low max HR
+                    if (this.hasEvidence('fbs', 1)) diseaseRisk += 10; // High fasting sugar
+
+                    // Treatments DECREASE disease risk directly (beyond their effect on clinical factors)
+                    if (this.hasEvidence('lifestyle', 2)) diseaseRisk -= 15; // Intensive lifestyle
+                    if (this.hasEvidence('lifestyle', 1)) diseaseRisk -= 8; // Moderate lifestyle
+                    
+                    if (this.hasEvidence('bp_meds', 1) || this.hasEvidence('bp_meds', 2) || this.hasEvidence('bp_meds', 3)) {
+                        diseaseRisk -= 12; // Any BP medication
+                    }
+                    
+                    if (this.hasEvidence('chol_meds', 2)) diseaseRisk -= 18; // High statin
+                    if (this.hasEvidence('chol_meds', 1)) diseaseRisk -= 10; // Low statin
+
+                    diseaseRisk = Math.max(5, Math.min(95, diseaseRisk));
+                    probs = [100 - diseaseRisk, diseaseRisk]; // [Healthy, Disease]
+                }
+
+                // Symptoms depend on disease
+                if (node.id === 'cp') {
+                    if (this.hasEvidence('target', 1)) { // Disease present
+                        probs = [10, 25, 30, 35]; // More likely typical angina
+                    } else {
+                        probs = [60, 25, 10, 5]; // Less likely symptoms
+                    }
+                }
+
+                if (node.id === 'exang') {
+                    if (this.hasEvidence('target', 1)) { // Disease present
+                        probs = [30, 70]; // [No, Yes]
+                    } else {
+                        probs = [85, 15];
+                    }
+                }
+
+                // Normalize probabilities
+                const sum = probs.reduce((a, b) => a + b, 0);
+                if (sum > 0) {
+                    probs = probs.map(p => (p / sum) * 100);
+                }
+
+                return probs;
+            }
+
+            hasEvidence(nodeId, stateIdx) { 
+                return this.evidence[nodeId] === stateIdx; 
+            }
+        }
+
+        const canvas = document.getElementById('canvas');
+        let lines = [];
+
+        function renderNode(node) {
+            const pos = initialLayout[node.id] || {x: 100, y: 100};
+            
+            const div = document.createElement('div');
+            div.className = node.isTreatment ? 'node-card treatment' : 'node-card';
+            if (node.id === 'target') {
+                div.style.background = 'linear-gradient(135deg, #fef5e7 0%, #ffffff 100%)';
+                div.style.border = '2px solid #f39c12';
+            }
+            div.id = `node-${node.id}`;
+            div.style.left = pos.x + 'px';
+            div.style.top = pos.y + 'px';
+            
+            let rowsHtml = '';
+            node.states.forEach((state, idx) => {
+                rowsHtml += `
+                    <div class="state-row" id="row-${node.id}-${idx}" onclick="bn.setEvidence('${node.id}', ${idx})">
+                        <div class="state-label" title="${state}">${state}</div>
+                        <div class="bar-container">
+                            <div class="bar-fill" id="bar-${node.id}-${idx}" style="width: ${100/node.states.length}%"></div>
+                        </div>
+                        <div class="bar-val" id="val-${node.id}-${idx}">${Math.round(100/node.states.length)}%</div>
+                    </div>
+                `;
+            });
+
+            const icon = node.isTreatment ? 'fa-pills' : (node.id === 'target' ? 'fa-heart-pulse' : 'fa-chart-bar');
+
+            div.innerHTML = `
+                <div class="node-header">
+                    <span>${node.title}</span>
+                    <i class="fas ${icon} text-gray-400"></i>
+                </div>
+                <div class="node-body">${rowsHtml}</div>
+            `;
+            
+            makeDraggable(div);
+            canvas.appendChild(div);
+        }
+
+        function renderUpdate(nodeId, probs, activeIdx) {
+            probs.forEach((p, idx) => {
+                const bar = document.getElementById(`bar-${nodeId}-${idx}`);
+                const val = document.getElementById(`val-${nodeId}-${idx}`);
+                const row = document.getElementById(`row-${nodeId}-${idx}`);
+                
+                if (bar && val && row) {
+                    bar.style.width = Math.max(0, Math.min(100, p)) + '%';
+                    val.innerText = Math.round(p) + '%';
+                    
+                    if (activeIdx === idx) {
+                        row.classList.add('active');
+                    } else {
+                        row.classList.remove('active');
+                    }
+                }
+            });
+        }
+
+        function drawLines() {
+            lines.forEach(l => l.remove());
+            lines = [];
+            modelDefinition.edges.forEach(edge => {
+                const start = document.getElementById(`node-${edge[0]}`);
+                const end = document.getElementById(`node-${edge[1]}`);
+                if (start && end) {
+                    // Treatment nodes get green lines
+                    const startNode = modelDefinition.nodes.find(n => n.id === edge[0]);
+                    const color = startNode?.isTreatment ? '#48bb78' : '#a0aec0';
+                    
+                    lines.push(new LeaderLine(start, end, {
+                        color: color, 
+                        size: 2, 
+                        path: 'grid', 
+                        startSocket: 'bottom', 
+                        endSocket: 'top',
+                        plug: 'arrow3',
+                        plugSize: 1.5
+                    }));
+                }
+            });
+        }
+
+        function makeDraggable(el) {
+            let isDragging = false, startX, startY, initialLeft, initialTop;
+            const header = el.querySelector('.node-header');
+
+            header.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialLeft = el.offsetLeft;
+                initialTop = el.offsetTop;
+                el.style.zIndex = 100;
+                e.preventDefault();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                el.style.left = (initialLeft + (e.clientX - startX)) + 'px';
+                el.style.top = (initialTop + (e.clientY - startY)) + 'px';
+                lines.forEach(l => l.position());
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    el.style.zIndex = 10;
+                }
+            });
+        }
+
+        const bn = new BayesNet(modelDefinition);
+        window.onload = function() {
+            modelDefinition.nodes.forEach(renderNode);
+            setTimeout(() => {
+                drawLines();
+                bn.updateBeliefs();
+            }, 100);
+        };
+    </script>
+</body>
+</html>
