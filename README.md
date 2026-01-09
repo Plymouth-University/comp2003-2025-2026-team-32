@@ -1,6 +1,5 @@
 # Cardiovascular Disease Risk Calculator
 
-[![Ask DeepWiki](https://devin.ai/assets/askdeepwiki.png)](https://deepwiki.com/JorjitDasoria/Cardiovascular-Disease-Calculator)
 
 A web-based clinical decision support tool that uses a Bayesian Network to predict the risk of cardiovascular disease. The application provides real-time risk assessment based on patient attributes and visualizes both the network structure and the influence of various factors.
 
