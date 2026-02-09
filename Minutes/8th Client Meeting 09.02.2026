@@ -1,0 +1,64 @@
+
+
+**MINUTES OF MEETING: CARDIOVASCULAR RISK PREDICTION SYSTEM DEVELOPMENT**
+
+**DATE:** February 9, 2026
+**TIME:** 11:00 AM – 12:00 PM
+**LOCATION:** SMB1003
+**RECORDER:** Gemini
+**PARTICIPANTS:** YVONNE, JORJIT, HUSSAIN, RUSHIL
+
+---
+
+**1. ARCHITECTURAL & SECURITY OVERVIEW**
+
+* **Decoupled Microservices:** The Project Lead (PL) confirmed the application has been split into separate apps (Front-end: React; Back-end: Python). This prevents a "single point of failure"—if the login or front-end fails, the logic layer remains intact.
+* **Security & OS Heterogeneity:** To meet medical data standards, the PL is implementing a strategy where different components run on different Operating Systems (Windows, Linux, Ubuntu) within **Docker containers**. This increases the "computational cost" for an attacker, as they would need to exploit multiple OS environments to access sensitive data.
+* **Dynamic Retraining:** The Bayesian Network is now dynamic. Unlike previous versions where percentages (CPTs) were hard-coded, the system now retrains on the dataset (currently 300 patients) upon execution. This allows the model to adapt automatically if the underlying CSV data is expanded (e.g., from 300 to 600 patients).
+
+**2. MODEL VERIFICATION & MATHEMATICAL LOGIC**
+
+* **Mean Squared Error (MSE) Implementation:** The PL introduced MSE as a primary verification metric.
+* Current MSE: **0.0175 (1.75%)**.
+* Interpretation: This indicates "Excellent" accuracy, proving the Bayesian logic is a near-exact mirror of the real-world frequencies found in the clinical dataset.
+
+
+* **Conditional Probability Tables (CPTs):** The team discussed the transition from manual CPT calculation to direct data-driven functions. This removes human error and ensures the percentages are mathematically grounded in the patient data.
+
+**3. AI DOCTOR (LLM) INTEGRATION & DISPARITY DEBATE**
+
+* **The AI/Mathematical Disparity:** A significant discussion occurred regarding why the Bayesian Network (BN) gave a 62% risk while the AI (Gemini) gave 10-15% for the same patient.
+* **BN Logic:** Based on a 300-patient dataset where every patient already felt ill enough to visit a doctor. This "skews" the baseline risk higher (minimums around 50%).
+* **LLM Logic:** Based on broader medical benchmarks (ASCVD risk scores) and internet-trained data.
+
+
+* **Client Requirement (Trend Alignment):** The Client emphasized that while numbers may differ, the **directional trend** must align. If a patient is marked "Healthy," both models should move downward. If the trends move in opposite directions, it undermines the software's credibility.
+* **Scope Constraints:** The PL will update the LLM "prompting" to ensure the AI admits when there is "insufficient data" rather than hallucinating a random percentage.
+
+**4. CLINICAL FEATURES & USER INTERFACE**
+
+* **Range-Based Inputs:** Labels like "Young" or "Old" have been replaced with specific clinical ranges (e.g., Cholesterol <200 = Desirable; >240 = High) to satisfy medical professional requirements.
+* **Treatment Intervention Nodes:** The model now includes:
+1. **Statin Therapy** (Moderate/High intensity).
+2. **BP Medication** (Monotherapy/Standard).
+3. **PCI & Stents** (Surgical history).
+
+
+* **Visual Decision Tree:** The interface displays a decision tree, though it is currently static. The Client suggested making data visualizations (EDA) more accessible to the end-user (Doctor/Patient) rather than just a backend tool.
+
+**5. PROJECT SUSTAINABILITY & COST**
+
+* **API Credits:** The PL is using Gemini Pro via an API key. To manage costs, the PL utilized a student credit of £150.
+* **Model Selection:** The team discussed using "stronger" models (Claude Opus or Gemini 1.5) for better reasoning, provided the token cost remains manageable. The PL noted that simple Google searches/calls cost less than a penny per request.
+
+**6. ACTION ITEMS FOR NEXT TIME**
+
+* ** Prompt Engineering:** Add an "Edge Case" handler to the AI Doctor to address data gaps and ensure disclaimers regarding "AI Hallucination" are visible.
+* ** Data Visualization:** Integrate front-end charts to help users visualize how their specific risk factors correlate with the wider dataset.
+* ** User Testing:** Prepare a URL for medical students to test the app. The PL will investigate University server space for hosting.
+* ** Logic Benchmark:** Compare the app's output against the American College of Cardiology (ACC) "ASCVD Risk Estimator" as a secondary gold-standard validation.
+
+---
+
+**NEXT MEETING:** February 23, 2026, at **11:00 AM**.
+
