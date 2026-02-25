@@ -1,0 +1,57 @@
+# COMP2003 Meeting Minutes
+
+Date: 25/02/2026
+
+---
+
+Attendees: Group members, supervisor
+
+---
+
+TECHNICAL UPDATES
+
+The group presented the updated Bayesian Network system. The key change was switching from a standard Bayesian Network to a Naive Bayes classifier. The rationale is that with only 303 records and 13-14 attributes, a standard network causes overfitting because the number of possible attribute combinations exceeds what the data set supports. Naive Bayes treats each attribute independently and stacks probabilities, which produces more reliable results on small data sets.
+
+The model now saves as a PKL file so it no longer retrains on every load. The slow load time is due to the free tier of Render, which puts the server to sleep after 15-30 minutes of inactivity. The group suggested creating a bot that pings the server every 30 minutes to keep it active.
+
+The front end and back end now run as two separate apps communicating via an API. This means if the back end goes down, the front end stays visible.
+
+The AI (Gemini) now reads the Bayesian Network output and provides a breakdown of the result. The supervisor confirmed the AI should run independently and show a similar risk trend to the network, but not the same number. The AI should have its own percentage based on the patient attributes without being fed the network's figure.
+
+The what-if feature allows users to type questions about interventions. A second version of this feature will connect to the open web so users can ask broader medical questions, still scoped to medical topics via system prompts.
+
+The ECG attribute was found to be missing from the input form. The group confirmed this was an oversight and will be fixed.
+
+---
+
+ISSUES IDENTIFIED
+
+The graph visualization does not change dynamically when the user changes the dropdowns. The supervisor noted this would be more accurate if the conditional probability tables updated based on input. This was marked as a low-priority item given time constraints.
+
+The scroll behavior inside the graph container is broken on some devices, including mobile. The gray box traps the scroll. The group will look into fixing this.
+
+The 98% output for worst-case inputs was flagged as potentially not medically plausible. The supervisor asked the team to verify whether the percentage values are medically feasible, not just statistically correct.
+
+---
+
+ACTION ITEMS
+
+The group to host the old Bayesian Network version alongside the new one for comparison. The old version will not include the new breakdown features.
+
+Team to define comprehensive test cases covering healthy and non-healthy profiles, then check whether the outputs are logically consistent.
+
+Team to verify that the manually calculated CPTs from the earlier phase match the automatically generated ones in the current version.
+
+Team to consult a medical professional or medical resources to confirm whether the probability outputs are medically realistic.
+
+The group to separate the AI so it generates its own risk percentage independently, not fed by the network output.
+
+The group to add a static image of the full network graph above the dynamic one so users do not have to wait for it to render on first load.
+
+Team to conduct iterative user testing in rounds of two users per member, fixing issues between each round rather than testing all users on the same version.
+
+The group to explore a PDF export feature for the patient report output.
+
+---
+
+Next meeting: TBC
