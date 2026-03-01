@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/backend-bayesian/backend-bayesian.iml" filepath="$PROJECT_DIR$/backend-bayesian/backend-bayesian.iml" />
+      <module fileurl="file://$PROJECT_DIR$/cardio-disease-network.iml" filepath="$PROJECT_DIR$/cardio-disease-network.iml" />
+      <module fileurl="file://$PROJECT_DIR$/frontend-ui/frontend-ui.iml" filepath="$PROJECT_DIR$/frontend-ui/frontend-ui.iml" />
+    </modules>
+  </component>
+</project>

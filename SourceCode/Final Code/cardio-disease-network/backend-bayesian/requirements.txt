@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pandas
+pgmpy
+networkx
+pydantic
+google-genai
+python-dotenv
