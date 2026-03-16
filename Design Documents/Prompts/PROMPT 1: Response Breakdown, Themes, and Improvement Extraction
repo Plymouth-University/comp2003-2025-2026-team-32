@@ -1,0 +1,9 @@
+PROMPT 1: Response Breakdown, Themes, and Improvement Extraction
+"I am going to paste a user testing response from a student who tested our MVP. Your job is to break this response down into a structured analysis. Do the following:
+
+Identify every distinct topic or feature the student mentions. List each one separately.
+For each topic or feature, extract the student's sentiment: positive, negative, mixed, or neutral. Quote the specific words or phrases that reveal their sentiment.
+For each topic or feature, determine whether the student is describing a problem, making a suggestion, giving praise, or expressing confusion. Label each one.
+Pull out every improvement the student suggests, whether explicitly stated or implied. If the student describes a frustration without offering a fix, infer what improvement would resolve their frustration and flag it as 'inferred' versus 'explicit.'
+Rank all identified issues by severity. Use this scale: Critical (blocks the user from completing a task), Major (causes significant frustration or confusion), Minor (a small annoyance that does not prevent task completion), Cosmetic (visual or language preference only).
+Summarize the student's overall experience in 2 to 3 sentences. State what they valued most and what caused them the most friction.
