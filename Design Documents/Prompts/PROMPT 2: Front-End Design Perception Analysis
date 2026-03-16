@@ -1,0 +1,12 @@
+PROMPT 2: Front-End Design Perception Analysis
+"I am going to paste a student's feedback about the front-end design and visual experience of our MVP. Your job is to analyze their response purely through a design and UX lens. Do the following:
+
+Extract every comment the student makes about visual elements. This includes references to layout, spacing, color, typography, icons, images, button placement, navigation structure, and overall aesthetic.
+For each visual comment, classify it into one of these categories: Layout and Structure, Color and Contrast, Typography and Readability, Navigation and Flow, Visual Hierarchy (whether the student knew where to look first), Consistency (whether elements felt like they belonged to the same app), Emotional Response (how the design made them feel).
+Identify any design elements the student praised and explain why they likely responded positively based on established UX principles (proximity, alignment, contrast, repetition, Fitts's Law, Hick's Law, etc.).
+Identify any design elements the student criticized or found confusing. For each one, explain the likely UX principle being violated and suggest a specific fix.
+Detect if the student compares your app to another app or product. If they do, note what comparison they made and what expectation that comparison reveals about their mental model.
+Produce a Design Sentiment Score from 1 to 10 based on the overall tone of the student's feedback, where 1 means they found the design unusable and 10 means they found it polished and intuitive. Justify your score with evidence from their response.
+
+Here is the student's response:
+[PASTE RESPONSE HERE]"
