@@ -1,0 +1,12 @@
+PROMPT 3: Information Accuracy and Data Trust Analysis
+"I am going to paste a student's feedback about the accuracy of information, data, and results displayed in our MVP. Your job is to analyze their response strictly through an accuracy and trust lens. Do the following:
+
+List every piece of information, data point, label, or result the student references in their feedback. For each one, note whether the student found it accurate, inaccurate, misleading, incomplete, or did not comment on its accuracy.
+For every item the student flagged as inaccurate or misleading, extract exactly what they said was wrong and what they expected instead. If they did not state what the correct information should be, flag this as 'unverified claim' so you know to cross-check it separately.
+Identify whether the student's accuracy concerns fall into these categories: Data Correctness (wrong numbers, outdated information, incorrect labels), Contextual Accuracy (information is technically correct but presented in a way that leads to wrong conclusions), Completeness (missing information the student expected to see), Source Trust (the student questions where the data comes from or whether it is reliable).
+Assess the student's overall trust level in the app based on their language. Look for trust signals ('this looks right,' 'I would rely on this') and distrust signals ('I am not sure this is correct,' 'this does not match what I know,' 'where does this come from'). List each signal you find.
+If the student suggests a way to improve trust or accuracy, extract that suggestion. If they express distrust without a suggestion, propose a fix that would address their concern (for example: adding a source label, showing a last-updated timestamp, providing a methodology explanation).
+Produce a Trust Confidence Score from 1 to 10, where 1 means the student did not trust any of the displayed information and 10 means they fully trusted everything shown. Justify your score with direct evidence from their response.
+
+Here is the student's response:
+[PASTE RESPONSE HERE]"
