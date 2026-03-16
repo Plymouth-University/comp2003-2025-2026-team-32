@@ -1,0 +1,105 @@
+Minutes of Meeting
+Module: Comp2003
+Date: 12 March 2026
+Attendees: Client representative and project group members
+
+1. Project Progress Update
+
+The team presented the current progress of the cardiovascular disease prediction system. The model predicts whether a patient has cardiovascular disease based on medical attributes from the dataset.
+
+The disease variable in the dataset originally included five levels ranging from 0 to 4.
+0 represents no cardiovascular disease.
+1, 2, 3, and 4 represent increasing severity levels.
+
+For modelling purposes, the values were converted into a binary classification:
+
+• 0 represents no cardiovascular disease
+• 1 represents the presence of cardiovascular disease (levels 1 to 4 grouped together)
+
+This simplification allows the model to produce a clear true or false output when predicting the presence of cardiovascular disease.
+
+The probability output represents how closely a patient’s attributes match patterns found in the dataset. The system compares the attributes entered by the user with those from the dataset. When many high risk attributes match those commonly associated with cardiovascular disease, the system produces a higher probability score.
+
+2. Conditional Probability Tables (CPTs)
+
+The model uses Conditional Probability Tables generated from the dataset of 303 patients. These CPT values are calculated automatically using a probabilistic modelling library.
+
+The current CPT values were compared with manually coded CPT tables created earlier in development. The earlier tables were found to contain errors due to incorrect network structure and manual implementation.
+
+The new CPT values provide greater accuracy due to higher decimal precision and correct probability calculations. For example, previous values showed probabilities around 54.1 percent versus 45.9 percent, while the updated model produced values around 53.86 percent versus 46.14 percent.
+
+Although the difference is small, the automated approach produces more reliable probabilities.
+
+3. Bayesian Network Structure
+
+The group discussed the structure of the Bayesian Network used in the model.
+
+Earlier versions used a hierarchical network where attributes were connected to each other before linking to the disease node. This structure resembled a tree or spider network with intermediate nodes connecting different attributes.
+
+The current implementation uses a simplified structure. Each patient attribute connects directly to the cardiovascular disease target node. Attributes no longer connect to each other.
+
+This flat structure allows each attribute to independently influence the disease prediction and simplifies the probability calculations.
+
+4. Interface and System Functionality
+
+The system interface was demonstrated to show how users interact with the model.
+
+The interface includes:
+
+• A visual diagram showing the distribution of the dataset of 303 patients
+• Input fields where users enter patient attributes
+• A calculation function that generates the probability of cardiovascular disease
+
+Future interface improvements were discussed. Planned changes include interactive tick boxes for attribute selection and automatic updating of results when patient data is entered. The visual dataset diagram will remain static because it represents the fixed dataset distribution.
+
+5. Artificial Intelligence Components
+
+The system includes artificial intelligence elements to support the prediction results.
+
+The interface now contains three sections:
+
+• Patient attribute input
+• Bayesian Network probability result
+• AI generated analysis
+
+One AI component explains the Bayesian Network result in natural language. A second AI component generates an independent prediction based on the patient data without relying on the Bayesian Network output.
+
+This allows users to compare a statistical probability prediction with an independent AI interpretation.
+
+An upgrade to a stronger AI model is also being implemented to improve reasoning and explanation quality.
+
+6. User Testing Plan
+
+The group presented an initial user testing plan to evaluate the usability of the system.
+
+The proposed testing process includes three stages.
+
+Pre test questions will collect background information from participants. These questions will assess factors such as familiarity with medical symptom checkers and confidence in interpreting statistical probabilities.
+
+Testing tasks will ask participants to interact with the interface. Participants will enter predefined mock patient data and observe the system output. The tasks will assess how easily users locate features, enter data, and interpret the probability results.
+
+A second task will test system behaviour when required patient data is missing. Participants will attempt to generate results with incomplete data to observe how the interface handles this situation.
+
+Post test questions will gather feedback about usability, clarity of results, and overall usefulness of the system.
+
+7. Feedback on User Testing Design
+
+The client representative recommended adjusting the testing questions to include more quantitative responses. Multiple choice questions and rating scales were suggested instead of open ended questions. This approach will make it easier to analyse responses and present results using graphs.
+
+Participants may still provide some qualitative feedback, but the majority of questions should allow structured responses.
+
+The testing duration was discussed and estimated to take approximately 15 to 30 minutes per participant.
+
+It was also recommended that the team conduct an internal trial run of the testing process before starting the official user testing phase. Testing with friends or roommates would help identify any issues with the questions or the interface.
+
+8. Target Participants for Testing
+
+The group plans to recruit participants in small rounds of testing. The initial plan is to test two participants at a time. After each round, the team will review the results and make adjustments before testing the next group.
+
+Participants will ideally include medical students, particularly those with knowledge of cardiovascular disease or clinical experience. Their feedback will help assess the perceived accuracy and usefulness of the system.
+
+Additional questions should also ask participants whether they agree with the AI explanation, whether they trust the probability output, and whether the application would be useful in medical contexts.
+
+9. Next Steps
+
+The group will complete the remaining interface updates and implement the improved AI model. The user testing questions will be revised to include more quantitative response options. The team will then conduct a small internal test before beginning the first round of formal user testing with external participants.
