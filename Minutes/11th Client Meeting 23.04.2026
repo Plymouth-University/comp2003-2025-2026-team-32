@@ -1,0 +1,139 @@
+Meeting Minutes
+
+Date
+Not specified
+
+Attendees
+Project team
+Client
+
+Purpose
+Review current progress of the application
+Prepare for User Acceptance Testing (UAT)
+Collect feedback and define remaining tasks before Monday deadline
+
+Key Updates
+
+Progress
+
+* Application reached a functional stage
+* Core features implemented and working locally
+* User testing conducted with two initial users
+* Additional testing planned with medical students
+
+User Testing
+
+* Initial testers were non-medical users
+* Feedback focused on usability and clarity
+* Key issues identified:
+
+  * Confusing graphs
+  * Lack of explanations
+  * Cluttered layout
+* UI updated:
+
+  * Graphs placed side by side
+  * Dynamic graph added for patient inputs
+
+UAT Plan
+
+* UAT scheduled for Monday
+* Purpose: final user sign-off
+* Client will test the software and provide feedback
+* Team aims to complete refinements before UAT
+
+Technical Notes
+
+Deployment
+
+* Current version not yet published
+* Frequent updates delayed deployment
+* Plan to publish latest version after meeting
+
+Performance
+
+* API issues identified due to multiple simultaneous requests
+* Temporary delay added between requests to prevent crashes
+
+AI Functionality
+
+* AI currently restricted to 3 treatment options
+
+  * Statins
+  * Blood pressure treatment
+  * One additional intervention
+* Restriction added to avoid unsafe medical advice
+* Potential to expand AI scope discussed but not prioritized
+
+Data and Model Issues
+
+* Bayesian model influenced heavily by “blocked vessels” variable
+* Discrepancy between AI output and model output observed
+* Dataset imbalance noted
+* Need to refine:
+
+  * Model weighting
+  * AI prompt logic
+  * Threshold for “significant difference” between outputs
+
+UI and UX Feedback
+
+Clarity
+
+* Graphs require clear explanations
+* Terms like “clinical contribution” unclear
+* Users need guidance on what each section shows
+
+Input Requirements
+
+* All fields must be filled before analysis
+* Instruction to users needs to be added
+
+Risk Output
+
+* Confusion around percentages and medical meaning
+* Need clearer explanation of:
+
+  * Risk calculation
+  * Accuracy metrics
+
+PDF Export
+
+* Feature implemented
+* Formatting issues need fixing
+
+Open Issues
+
+* Improve explanation for all graphs and outputs
+* Refine AI prompt to reduce over-reliance on blocked vessels
+* Define threshold for model vs AI discrepancy
+* Validate medical assumptions with reliable sources
+* Improve PDF layout
+* Add user instructions for input completion
+* Explain accuracy calculation (MSE or equivalent)
+* Finalize comprehensive test cases after user testing
+
+Next Steps
+
+Before Monday
+
+* Publish latest version
+* Complete remaining user testing
+* Implement UI explanations
+* Refine AI logic and prompts
+* Fix PDF export issues
+
+Monday
+
+* Conduct UAT with client
+* Gather final feedback
+* Complete UAT documentation
+
+Additional Notes
+
+* App aims to show difference between:
+
+  * Mathematical model (Bayesian network)
+  * General AI estimation
+* Dataset limitations acknowledged
+* Further validation required for medical credibility
